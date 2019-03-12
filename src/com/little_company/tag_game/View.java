@@ -15,14 +15,26 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
 import javafx.stage.Stage;
 
+/**
+ * 
+ * @author umnikum
+ *
+ */
+
 public class View extends Application{
 
 	private Stage primaryStage;
     private BorderPane rootLayout;
-    private GameController gc;
+    private int size = 4;
+    private boolean launched;
+    private GameController controller;
+    private GridPane gameScene;
     
     
-	public void initRootLayout() {
+    /**
+     * Creates basic root layout for application
+     */
+    private void initRootLayout() {
         try {
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(View.class.getResource("RootLayout.fxml"));
@@ -35,22 +47,88 @@ public class View extends Application{
         }
     }
 	
-    public void initGameScene() {
-    	int size = 4;
-        gc = new GameController(size);
-        gc.generate();
-        Tag[][] board = gc.getBoardState();
-        GridPane gameScene = new GridPane();
-        
-        for(int i= 0; i < size; i++) {
+    /**
+     * Initialize new game scene
+     */
+    private void initGameScene() {
+        gameScene = new GridPane();
+        initializeTags();
+        gameScene.setOnKeyReleased(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent event) {
+            	if(launched) {
+            		Tag oldEmptyTag = controller.getEmptyTag();
+	                if(makeTurn(chooseDirection(event))) {
+	                	correctView(oldEmptyTag);
+	                	if(controller.isCorrect()) endGame();
+	                }
+	            }
+            	event.consume();
+            }
+        });
+        rootLayout.setCenter(gameScene);
+    }
+    
+    /**
+     * Analyze {@link KeyEvent} and request for specific action
+     * @param event given {@link KeyEvent}
+     * @return direction integer value representing four standard directions starting from right counterclockwise
+     */
+    private int chooseDirection(KeyEvent event) {
+    	switch (event.getCode()) {
+        case A:	return 0;
+        case S:	return 1;
+        case D:	return 2;
+        case W:	return 3;
+        case R:	return 4;
+        default:System.out.println(event.getCode() + " is not used by this program!");
+        		return -1;
+    	}
+    }
+    
+    /**
+     * Delegates turn action to {@link GameController} object
+     * @param direction integer value representing four standard directions starting from right counterclockwise
+     * @return true if turn was correct and was performed and false otherwise
+     */
+    private boolean makeTurn(int direction) {
+    	boolean correctTurn = false;
+    	if(direction >= 0) {
+        	if(direction < 4) {
+        		correctTurn = controller.swap(direction);
+        		if(correctTurn) controller.writeToMemory(direction);
+        	}else correctTurn = controller.undo();
+        }
+    	return correctTurn;
+    }
+    
+    /**
+     * Corrects representation to latest state of the model
+     * @param emptyTag older position of special empty tag
+     */
+    private void correctView(Tag emptyTag) {
+    	Button viewReserve = emptyTag.getView();
+    	emptyTag.setViewLink(controller.getEmptyTag().getView());
+    	controller.getEmptyTag().setViewLink(viewReserve);
+    	gameScene.getChildren().removeAll(emptyTag.getView(), controller.getEmptyTag().getView());
+    	gameScene.add(emptyTag.getView(), emptyTag.getX(), emptyTag.getY());
+    	gameScene.add(controller.getEmptyTag().getView(), controller.getEmptyTag().getX(), controller.getEmptyTag().getY());
+    }
+    
+    /**
+     * Creates {@link Button} objects representing tags and install them in game scene
+     */
+    private void initializeTags() {
+    	Tag[][] board = controller.getBoardState();
+        for(int i = 0; i < size; i++) {
         	ColumnConstraints cc = new ColumnConstraints(50, 50, Double.MAX_VALUE);
         	RowConstraints rc = new RowConstraints(50, 50, Double.MAX_VALUE);
-        	gameScene.getColumnConstraints().add(cc);
-        	gameScene.getRowConstraints().add(rc);
         	cc.setHgrow(Priority.SOMETIMES);
         	rc.setVgrow(Priority.SOMETIMES);
+        	gameScene.getColumnConstraints().add(cc);
+        	gameScene.getRowConstraints().add(rc);
         	for(int j = 0; j < size; j++) {
-        		Button button= new Button(board[i][j].value());
+        		Button button = new Button(board[i][j].value());
         		gameScene.add(button, i, j);
         		button.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         		board[i][j].setViewLink(button);
@@ -59,57 +137,42 @@ public class View extends Application{
         		}else button.setStyle("-fx-font: 25 arial;");
         	}
         }
-        
-        gameScene.setOnKeyReleased(new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent event) {
-            	Tag emptyTag = gc.getEmptyTag();
-            	int direction = -1;
-            	boolean correctTurn = false;
-                switch (event.getCode()) {
-                    case A:	direction = 0; break;
-                    case S:	direction = 1; break;
-                    case D:	direction = 2; break;
-                    case W:	direction = 3; break;
-                    case R:	direction = 4; break;
-                    default: System.out.println(event.getCode() + " is not used by this program!");
-                }
-                if(direction >= 0) {
-                	if(direction < 4) {
-                		correctTurn = gc.swap(direction);
-                		if(correctTurn) gc.writeToMemory(direction);
-                	}else correctTurn = gc.undo();
-                }
-                if(correctTurn) {
-                	Button viewReserve = emptyTag.getView();
-                	emptyTag.setViewLink(gc.getEmptyTag().getView());
-                	gc.getEmptyTag().setViewLink(viewReserve);
-                	gameScene.getChildren().removeAll(emptyTag.getView(), gc.getEmptyTag().getView());
-                	gameScene.add(emptyTag.getView(), emptyTag.getX(), emptyTag.getY());
-                	gameScene.add(gc.getEmptyTag().getView(), gc.getEmptyTag().getX(), gc.getEmptyTag().getY());
-                }
-                if(gc.isCorrect()) endGame();
-                event.consume();
-            }
-        });
-        
-        rootLayout.setCenter(gameScene);
     }
     
-    public Stage getPrimaryStage() {
-    	return primaryStage;
-    }
-
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		this.primaryStage = primaryStage;
 		this.primaryStage.setTitle("Tag Game");
+		launched = false;
         initRootLayout();
-        initGameScene();
 	}
 	
-	public void endGame() {
-		System.out.println(gc.turnCounter());
+	/**
+	 * Method that finishing the game
+	 */
+	private void endGame() {
+		System.out.println(controller.turnCounter());
+		launched = false;
+	}
+	
+	/**
+	 * Setting preferred size of the board
+	 * @param size linear size of square board
+	 */
+	public void setGameSize(int size) {
+    	if(launched) {
+    		System.out.println("Game is launched, can not change size");
+    	}else this.size = size;
+    }
+	
+	/**
+	 * Starts new round of the game
+	 */
+	public void newGame() {
+		controller = new GameController(size);
+		controller.generate();
+		initGameScene();
+		launched = true;
 	}
 	
 	public static void main(String[] args) {
