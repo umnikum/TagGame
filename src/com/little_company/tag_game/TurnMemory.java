@@ -32,13 +32,12 @@ public class TurnMemory {
 				memory.add("down");
 				last++;
 				break;
-			default: break;
 			}
 		}
 	}
 	
 	public int getLast() {
-		switch(memory.get(last)) {
+		switch(memory.get(last - 1)) {
 		case "right":
 			return 0;
 		case "up":

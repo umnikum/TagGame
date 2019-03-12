@@ -13,11 +13,6 @@ public class GameController{
 		board = new Board(size);
 	}
 	
-	public GameController() {
-		memory = new TurnMemory();
-		board = new Board(4);
-	}
-	
 	protected void generate() {
 		Random gen = new Random();
 		int maxIterations = board.size() * board.size() * board.size() * board.size();
