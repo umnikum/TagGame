@@ -15,41 +15,53 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
 import javafx.stage.Stage;
 
+/**
+ * 
+ * @author umnikum
+ *
+ */
+
 public class View extends Application{
 
+    private int size;
 	private Stage primaryStage;
     private BorderPane rootLayout;
-    private int size = 4;
-    private boolean launched;
     private GameController controller;
     private GridPane gameScene;
+    private ViewController viewController;
     
-    
-	private void initRootLayout() {
+    /**
+     * Creates basic root layout for application
+     */
+    private void initRootLayout() {
         try {
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(View.class.getResource("RootLayout.fxml"));
             rootLayout = (BorderPane) loader.load();
             Scene scene = new Scene(rootLayout);
+            viewController = loader.getController();
+            viewController.setView(this);
             primaryStage.setScene(scene);
+            viewController.initializeExecutor();
             primaryStage.show();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 	
+    /**
+     * Initialize new game scene
+     */
     private void initGameScene() {
         gameScene = new GridPane();
         initializeTags();
         gameScene.setOnKeyReleased(new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent event) {
-            	if(launched) {
-            		Tag oldEmptyTag = controller.getEmptyTag();
-	                if(makeTurn(chooseDirection(event))) {
-	                	correctView(oldEmptyTag);
-	                	if(controller.isCorrect()) endGame();
-	                }
+            	Tag oldEmptyTag = controller.getEmptyTag();
+	            if(makeTurn(chooseDirection(event))) {
+	                correctView(oldEmptyTag);
+	                if(controller.isCorrect()) endGame();
 	            }
             	event.consume();
             }
@@ -57,6 +69,11 @@ public class View extends Application{
         rootLayout.setCenter(gameScene);
     }
     
+    /**
+     * Analyze {@link KeyEvent} and request for specific action
+     * @param event given {@link KeyEvent}
+     * @return direction integer value representing four standard directions starting from right counterclockwise
+     */
     private int chooseDirection(KeyEvent event) {
     	switch (event.getCode()) {
         case A:	return 0;
@@ -69,17 +86,32 @@ public class View extends Application{
     	}
     }
     
+    /**
+     * Delegates turn action to {@link GameController} object
+     * @param direction integer value representing four standard directions starting from right counterclockwise
+     * @return true if turn was correct and was performed and false otherwise
+     */
     private boolean makeTurn(int direction) {
     	boolean correctTurn = false;
     	if(direction >= 0) {
         	if(direction < 4) {
         		correctTurn = controller.swap(direction);
-        		if(correctTurn) controller.writeToMemory(direction);
-        	}else correctTurn = controller.undo();
+        		if(correctTurn) {
+        			controller.updateScore(GameController.TURN);
+        			controller.writeToMemory(direction);
+        		}
+        	}else {
+        		correctTurn = controller.undo();
+        		if(correctTurn) controller.updateScore(GameController.UNDO);
+        	}
         }
     	return correctTurn;
     }
     
+    /**
+     * Corrects representation to latest state of the model
+     * @param emptyTag older position of special empty tag
+     */
     private void correctView(Tag emptyTag) {
     	Button viewReserve = emptyTag.getView();
     	emptyTag.setViewLink(controller.getEmptyTag().getView());
@@ -89,6 +121,9 @@ public class View extends Application{
     	gameScene.add(controller.getEmptyTag().getView(), controller.getEmptyTag().getX(), controller.getEmptyTag().getY());
     }
     
+    /**
+     * Creates {@link Button} objects representing tags and install them in game scene
+     */
     private void initializeTags() {
     	Tag[][] board = controller.getBoardState();
         for(int i = 0; i < size; i++) {
@@ -114,26 +149,41 @@ public class View extends Application{
 	public void start(Stage primaryStage) throws Exception {
 		this.primaryStage = primaryStage;
 		this.primaryStage.setTitle("Tag Game");
-		launched = false;
         initRootLayout();
 	}
 	
-	private void endGame() {
-		System.out.println(controller.turnCounter());
-		launched = false;
+	@Override
+	public void stop() {
+		viewController.shutdownExecutor();
 	}
 	
+	/**
+	 * Method that finishing the game
+	 */
+	private void endGame() {
+		viewController.endGame();
+	}
+	
+	/**
+	 * Setting preferred size of the board
+	 * @param size linear size of square board
+	 */
 	public void setGameSize(int size) {
-    	if(launched) {
-    		System.out.println("Game is launched, can not change size");
-    	}else this.size = size;
+    	this.size = size;
     }
 	
+	/**
+	 * Starts new round of the game
+	 */
 	public void newGame() {
 		controller = new GameController(size);
 		controller.generate();
+		controller.updateScore(GameController.START);
 		initGameScene();
-		launched = true;
+	}
+		
+	public GameController getGameController() {
+		return controller;
 	}
 	
 	public static void main(String[] args) {
