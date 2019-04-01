@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.Group?>
 <?import javafx.scene.control.ButtonBar?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Menu?>
@@ -15,7 +16,7 @@
             <items>
               <MenuItem fx:id="newGame" mnemonicParsing="false" onAction="#startNewGame" text="New Game" />
                   <MenuItem mnemonicParsing="false" onAction="#openOptionsMenu" text="Options" />
-                  <MenuItem mnemonicParsing="false" text="High Score" />
+                  <MenuItem mnemonicParsing="false" text="High Scores" />
             </items>
           </Menu>
         </menus>
@@ -24,8 +25,12 @@
    <bottom>
       <ButtonBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
          <buttons>
-            <Label alignment="BOTTOM_LEFT" maxWidth="70.0" text="Score" />
-            <Label fx:id="scoreLabel" />
+            <Group fx:id="scoreGroup" visible="false">
+               <children>
+                  <Label alignment="BOTTOM_LEFT" maxWidth="72.0" prefHeight="17.0" prefWidth="55.0" text="Score" />
+                  <Label fx:id="scoreLabel" layoutX="85.0" prefHeight="17.0" prefWidth="66.0" />
+               </children>
+            </Group>
          </buttons>
       </ButtonBar>
    </bottom>

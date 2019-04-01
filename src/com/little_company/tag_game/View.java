@@ -29,6 +29,7 @@ public class View extends Application{
     private GameController controller;
     private GridPane gameScene;
     private ViewController viewController;
+    private GameState state;
     
     /**
      * Creates basic root layout for application
@@ -43,6 +44,7 @@ public class View extends Application{
             viewController.setView(this);
             primaryStage.setScene(scene);
             viewController.initializeExecutor();
+            state = new GameState();
             primaryStage.show();
         } catch (IOException e) {
             e.printStackTrace();
@@ -58,11 +60,13 @@ public class View extends Application{
         gameScene.setOnKeyReleased(new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent event) {
-            	Tag oldEmptyTag = controller.getEmptyTag();
-	            if(makeTurn(chooseDirection(event))) {
-	                correctView(oldEmptyTag);
-	                if(controller.isCorrect()) endGame();
-	            }
+            	if(state.getState() == GameState.INGAME) {
+	            	Tag oldEmptyTag = controller.getEmptyTag();
+		            if(makeTurn(chooseDirection(event))) {
+		                correctView(oldEmptyTag);
+		                if(controller.isCorrect()) endGame();
+		            }
+            	}
             	event.consume();
             }
         });
@@ -161,6 +165,7 @@ public class View extends Application{
 	 * Method that finishing the game
 	 */
 	private void endGame() {
+		state.changeTo(GameState.IDLE);
 		viewController.endGame();
 	}
 	
@@ -180,6 +185,7 @@ public class View extends Application{
 		controller.generate();
 		controller.updateScore(GameController.START);
 		initGameScene();
+		state.changeTo(GameState.INGAME);
 	}
 		
 	public GameController getGameController() {

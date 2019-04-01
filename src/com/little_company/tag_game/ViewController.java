@@ -10,6 +10,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
@@ -19,6 +20,8 @@ public class ViewController{
 	
 	@FXML
 	private Label scoreLabel;
+	@FXML
+	private Group scoreGroup;
 	private View ViewLink;
 	private ConfigMemory memory;
 	private ScheduledThreadPoolExecutor executor;
@@ -37,10 +40,16 @@ public class ViewController{
 		ViewLink.newGame();
 		controller = ViewLink.getGameController();
 		scoreLabel.textProperty().bind(controller.getScoreProperty().asString());
+		scoreGroup.setVisible(true);
 	}
 	
 	public void setGameSize(int size){
 		memory.setSize(size);
+	}
+	
+	public void setUserName(String name) {
+		memory.setUserName(name);
+		System.out.println(name);
 	}
 	
 	@FXML
@@ -54,6 +63,7 @@ public class ViewController{
             optionsController.setController(this);
             optionsController.size = memory.getSize();
             optionsController.mode = memory.getMode();
+            optionsController.userName = memory.getUserName();
             
             Stage stage = new Stage();
             optionsController.setStage(stage);
@@ -72,6 +82,7 @@ public class ViewController{
 	public void endGame() {
 		controller.updateScore(GameController.WIN);
 		task.pause();
+		memory.addRecord(controller.getScore());
 	}
 	
 	public void setView(View link) {

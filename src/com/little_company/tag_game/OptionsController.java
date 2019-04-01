@@ -3,6 +3,7 @@ package com.little_company.tag_game;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 public class OptionsController {
@@ -11,9 +12,11 @@ public class OptionsController {
 	private Slider sizeSlider;
 	@FXML
 	private CheckBox modeBox;
-	protected boolean mode;
 	@FXML
+	private TextField userNameField;
+	protected boolean mode;
 	protected int size;
+	protected String userName;
 	private boolean changed = false;
 	private ViewController controller;
 	private Stage optionsStage;
@@ -31,10 +34,17 @@ public class OptionsController {
 	}
 	
 	@FXML
+	private void onUserNameFieldChanged() {
+		userName = userNameField.getText();
+		changed = true;
+	}
+	
+	@FXML
 	public void saveChanges() {
 		if(changed) {
 			controller.setTimedMode(mode);
 			controller.setGameSize(size);
+			controller.setUserName(userName);
 			controller.startNewGame();
 		}
 		optionsStage.close();
